@@ -11,7 +11,7 @@ end
 fprintf('numel(waypoints) =\n'); disp(numWaypoints);
 
 % create velocity matrix
-waypointTimes = 0:4:(numWaypoints-1)*4;
+waypointTimes = 0:numWaypoints:(numWaypoints-1)*numWaypoints;
 ts = 0.8;
 trajTimes = 0:ts:waypointTimes(end); % Trajectory sample time
 % Boundary conditions (for polynomial trajectories)
@@ -20,4 +20,10 @@ waypointVels = 0.1 * ...
 waypointAccels = zeros(size(waypointVels));
 waypointAccelTimes = diff(waypointTimes)/4; % Acceleration times (trapezoidal only)
 
-clear x_waypoints y_waypoints z_waypoints delta ts 
+waypointsStruct = struct( ...
+    'waypoints', waypoints, ...
+    'velocities', waypointVels, ...
+    'accelerations', waypointAccels, ...
+    'times', waypointTimes);
+
+clear x_waypoints y_waypoints z_waypoints delta ts

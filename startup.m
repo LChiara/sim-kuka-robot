@@ -1,3 +1,24 @@
+% startup.m
+
+if exist('config', 'var')
+    TRAJECTORY = config.trajectory;
+    TP_MODE = config.space;
+else
+    TRAJECTORY = 1;
+    TP_MODE = 2;
+end
+
+switch TRAJECTORY
+    case 0
+        waypointLoaderScript = 'loadWaypointSimple';
+    case 1
+        waypointLoaderScript = 'loadWaypointQuadrilater';
+    case 2
+        waypointLoaderScript = 'loadWaypointQuadrilater2';
+    case 3
+        waypointLoaderScript = 'loadWaypointQuadrilater3';
+end
+
 if ~exist('IsSixAxesRobotInitialized', 'var')
     fprintf('Startup KukaKR6...\n');
     fprintf('Add Matlab paths...\n');
@@ -33,32 +54,33 @@ sixAxesRobot.M = dynamicParametersStruct.M;
 sixAxesRobot.I = dynamicParametersStruct.I;
 disp(sixAxesRobot);
 
-fprintf('%s Waypoints...\n', loadStr);
+fprintf('%s Waypoints from "%s"...\n', loadStr, waypointLoaderScript);
 % get home configuration
 q_config = [0 0 0 0 0 0]; T_homeConfig = sixAxesRobot.solveFK(q_config); homeConfig = T_homeConfig(1:3, 4);
 % load waypoints, waypoints velocities and waypoints accelerations
-loadWaypoints;
-waypointsStruct = struct( ...
-    'waypoints', waypoints, ...
-    'velocities', waypointVels, ...
-    'accelerations', waypointAccels, ...
-    'times', waypointTimes);
+run(waypointLoaderScript);
 
 fprintf('%s Bus Objects...\n', loadStr);
 load('busObjects.mat');
 
 fprintf('Opening model "KukaSimModel.slx"...\n');
 open_system('KukaSimModel.slx');
-dt_FixedStep = str2double(get_param('KukaSimModel', 'FixedStep'));
+fprintf('Setting "StopTime"=%ds...\n', max(waypointsStruct.times));
+set_param('KukaSimModel', 'StopTime', num2str(max(waypointsStruct.times)));
+%dt_FixedStep = str2double(get_param('KukaSimModel', 'FixedStep'));
+dt_FixedStep = 0.1;
 
-TP_MODE = 1;
-fprintf('Setting Variant TP_MODE=%d\n', TP_MODE);
+if TP_MODE == 1
+    modus = 'TaskSpace';
+else
+    modus = 'JointSpace';
+end
+fprintf('Setting Variant TP_MODE=%d->["%s"]\n', TP_MODE, modus);
 
 IsSixAxesRobotInitialized = true;
 
 clear i q_config T_homeConfig trajTimes waypointAccelTimes;
 clear d a alpha offset dir loadStr;
-%clear waypoints waypointVels waypointAccels waypointTimes <- still used in
-%variant
+clear waypoints waypointVels waypointAccels waypointTimes
 
 disp('Initialization Done.');
