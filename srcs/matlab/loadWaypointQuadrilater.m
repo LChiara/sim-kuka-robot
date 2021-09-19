@@ -1,7 +1,4 @@
 numWaypoints = 5;
-% x_waypoints = homeConfig(1)*ones(1, numWaypoints);
-% y_waypoints = [homeConfig(2)-50, homeConfig(2)-60, homeConfig(2)+70, homeConfig(2)+80, homeConfig(2)-50];
-% z_waypoints = [homeConfig(3)-50, homeConfig(3)+60, homeConfig(3)+70, homeConfig(3)-80, homeConfig(3)-50];
 x_waypoints = [homeConfig(1)-50, homeConfig(1)-60, homeConfig(1)+70, homeConfig(1)+80, homeConfig(1)-50];
 y_waypoints = [homeConfig(2)-200, homeConfig(2)-100, homeConfig(2)+100, homeConfig(2)+100, homeConfig(2)+100];
 z_waypoints = [homeConfig(3)-50, homeConfig(3)+60, homeConfig(3)+70, homeConfig(3)-80, homeConfig(3)-50];
@@ -25,6 +22,7 @@ waypointsStruct = struct( ...
     'waypoints', waypoints, ...
     'velocities', waypointVels, ...
     'accelerations', waypointAccels, ...
-    'times', waypointTimes);
+    'times', waypointTimes, ...
+    'orientations', []);
 
 clear x_waypoints y_waypoints z_waypoints delta ts

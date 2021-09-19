@@ -24,7 +24,7 @@ end
 
 function c = computePolynomialCoefficients(q0, qf, v0, vf, a0, af, t)
 % Following result has been obtained by:
-% >> syms q0 qf v0 vf t;
+% >> syms q0 qf v0 vf a0 af t;
 % >> c = [q0; v0; a0; 0; 0; 0];
 % >> T0 = [1 t t^2; 0 1 2*t; 0 0 2];
 % >> invTF = [10/t^3, -4/t^2,  1/(2*t);
