@@ -22,6 +22,7 @@ end
 if ~exist('IsSixAxesRobotInitialized', 'var')
     fprintf('Startup KukaKR6...\n');
     fprintf('Add Matlab paths...\n');
+    addpath(fullfile('.'));
     addpath(fullfile('srcs'));
     addpath(fullfile('srcs\matlab'));
     addpath(fullfile('srcs\simulink'));
@@ -34,15 +35,7 @@ else
 end
 
 fprintf('%s D-H parameters...\n', loadStr);
-d = [335; 0; 0; -295; 0; -80];
-a = [75; 270; 90; 0; 0; 0];
-alpha = [-pi/2; 0; pi/2; -pi/2; pi/2; pi];
-offset = [0; 0; 0; 0; 0; 0];
-dhParametersStruct = struct( ...
-    'd', d, ...
-    'a', a, ...
-    'alpha', alpha, ...
-    'offset', offset);
+dhParametersStruct = defineDHParameters();
 
 fprintf('%s Dynamic parameters...\n', loadStr);
 loadDynamicParameters; % load dynamic parameters
@@ -68,7 +61,7 @@ open_system('KukaSimModel.slx');
 fprintf('Setting "StopTime"=%ds...\n', max(waypointsStruct.times));
 set_param('KukaSimModel', 'StopTime', num2str(max(waypointsStruct.times)));
 %dt_FixedStep = str2double(get_param('KukaSimModel', 'FixedStep'));
-dt_FixedStep = 0.1;
+dt_FixedStep = 0.01;
 
 if TP_MODE == 1
     modus = 'TaskSpace';
@@ -80,7 +73,7 @@ fprintf('Setting Variant TP_MODE=%d->["%s"]\n', TP_MODE, modus);
 IsSixAxesRobotInitialized = true;
 
 clear i q_config T_homeConfig trajTimes waypointAccelTimes;
-clear d a alpha offset dir loadStr;
-clear waypoints waypointVels waypointAccels waypointTimes
+clear dir loadStr;
+clear waypoints waypointVels waypointAccels waypointTimes;
 
 disp('Initialization Done.');

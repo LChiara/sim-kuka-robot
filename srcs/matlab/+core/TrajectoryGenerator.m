@@ -1,23 +1,33 @@
 classdef TrajectoryGenerator < matlab.System & matlab.system.mixin.Propagates
-    % System object to generate a trajectory for defined wa ypoints.
+    % System object to generate a trajectory for a waypoints set.
     %
     % A cubic polynomial or quintic polynomial, basing on the user input,
     % are used to generate the trajectory between specified waypoints.
     
     properties(Nontunable)
+        %SolverSpace
+        SolverSpace = 'TaskSpace';
         %Method
         Method = 'Cubic Polynomial';
         %Waypoints
-        Waypoints = zeros(3,10);
+        Waypoints = zeros(3, 5);
         %Time Points
-        Timepoints = [0 1 2 3 4 5 6 7 8 9];
+        Timepoints = [0 1 2 3 4];
         %Velocity
-        Velocities = zeros(3,10);
+        Velocities = zeros(3, 5);
         %Acceleration
-        Accelerations = zeros(3,10);        
+        Accelerations = zeros(3, 5);
+        %PropertyLogical Include end-effector orientations (only for TaskSpace)
+        PropertyLogical (1, 1) logical = false;
+        %Orientations
+        Orientations = zeros(3, 5);
     end
     
     properties(Constant, Hidden)
+        SolverSpaceSet = matlab.system.StringSet({...
+            'TaskSpace', ...
+            'JointSpace', ...
+            })
         MethodSet = matlab.system.StringSet({...
             'Cubic Polynomial', ...
             'Quintic Polynomial', ...
@@ -46,10 +56,14 @@ classdef TrajectoryGenerator < matlab.System & matlab.system.mixin.Propagates
             coder.internal.errorIf(length(obj.Timepoints) ~= p, ...
                 'core:trajectorygenerator:TimepointsDimensionMismatch');
             coder.internal.errorIf(size(obj.Velocities, 1) ~= n || size(obj.Velocities, 2) ~= p, ...
-                'trajectoryPlanning:VelocitiesDimensionMismatch');
+                'core:trajectorygenerator:VelocitiesDimensionMismatch');
+            if obj.PropertyLogical
+                coder.internal.errorIf(size(obj.Orientations, 1) ~= n || size(obj.Orientations, 2) ~= p, ...
+                    'trajectoryPlanning:OrientationDimensionMismatch');
+            end
             if strcmp(obj.Method, 'Quintic Polynomial')
                 coder.internal.errorIf(size(obj.Accelerations, 1) ~= n || size(obj.Accelerations, 2) ~= p, ...
-                    'trajectoryPlanning:AccelerationsDimensionMismatch');
+                    'core:trajectorygenerator:AccelerationsDimensionMismatch');
             end
         end
         
@@ -65,12 +79,13 @@ classdef TrajectoryGenerator < matlab.System & matlab.system.mixin.Propagates
             
             % Caching the properties as local variables, when accessed
             % multiple times. Iterative calculations using cached local
-            % variables tun faster than calculations accessing the
+            % variables run faster than calculations accessing the
             % properties of an object.
             waypoints       = obj.Waypoints;
             velocities      = obj.Velocities;
             accelerations   = obj.Accelerations;
             timepoints      = obj.Timepoints;
+            integrateOrientation = obj.PropertyLogical;
             
             n = size(waypoints, 1);
             p = size(waypoints, 2);
@@ -114,6 +129,23 @@ classdef TrajectoryGenerator < matlab.System & matlab.system.mixin.Propagates
                 a_out(j, 1) = qdd;
             end
             
+            if integrateOrientation
+                orientations = obj.Orientations;
+                R0 = convertEulerToQuaternion(orientations(:, index)');
+                Rf = convertEulerToQuaternion(orientations(:, index+1)');
+                timeInterval = [timepoints(index), timepoints(index+1)];
+                R = rottraj(R0, ... % initial orientation
+                    Rf, ...         % final orientation
+                    timeInterval, ... % time interval
+                    t);             % current time
+                pos_out = [convertEulerToRotationMatrix(R), pos_out;
+                    zeros(1, 3), 1];
+            elseif strcmp(obj.SolverSpace, 'TaskSpace')
+                % transform in homogeneous T
+                pos_out = [eye(3), pos_out;
+                    zeros(1, 3), 1];
+            end
+            
             q_out = pos_out;
             qd_out = v_out;
             qdd_out = a_out;
@@ -122,7 +154,28 @@ classdef TrajectoryGenerator < matlab.System & matlab.system.mixin.Propagates
         function resetImpl(~)
             
         end
+        
+        function flag = isInactivePropertyImpl(obj,prop)
+            %isInactivePropertyImpl Identify inactive properties
+            %   Return false if property is visible based on object
+            %   configuration, for the command line and System block dialog
             
+            methodProps = {'SolverSpace', 'Method', 'Waypoints', 'Timepoints', 'Velocities'};
+            if strcmp(obj.Method, 'Quintic Polynomial')
+                methodProps = [methodProps, {'Accelerations'}];
+            end
+            if strcmp(obj.SolverSpace, 'TaskSpace')
+                methodProps = [methodProps, {'PropertyLogical'}];
+            end
+            if obj.PropertyLogical
+                methodProps = [methodProps, {'Orientations'}];
+            end
+            
+            props = methodProps;
+            
+            flag = ~ismember(prop, props);
+        end
+        
         function num = getNumInputsImpl(~)
             %getNumInputsImpl Define total number of inputs for system
             num = 1;
@@ -134,7 +187,7 @@ classdef TrajectoryGenerator < matlab.System & matlab.system.mixin.Propagates
         end
         
         function [out,out2,out3] = getOutputDataTypeImpl(~)
-            %getOutputDataTypeImpl Return data type for each output port            
+            %getOutputDataTypeImpl Return data type for each output port
             out = 'double';
             out2 = 'double';
             out3 = 'double';
@@ -143,7 +196,11 @@ classdef TrajectoryGenerator < matlab.System & matlab.system.mixin.Propagates
         function [out,out2,out3] = getOutputSizeImpl(obj)
             %getOutputSizeImpl Return size for each output port
             n = size(obj.Waypoints, 1);
-            out = [n 1];
+            if strcmp(obj.SolverSpace, 'TaskSpace')
+                out = [4 4]; % output homogeneout T for target pose in the operational space
+            else
+                out = [n 1];
+            end
             out2 = [n 1];
             out3 = [n 1];
         end
@@ -167,5 +224,28 @@ classdef TrajectoryGenerator < matlab.System & matlab.system.mixin.Propagates
             filepath = fullfile('srcs', 'simulink', 'blockicons', 'polynomial-icon-big.jpg');
             icon = matlab.system.display.Icon(filepath);
         end
+        
+    end
+    
+    methods (Static, Access = protected)
+        
+        function groups = getPropertyGroupsImpl
+            % Use getPropertyGroupsImpl to create property sections in the
+            % dialog. Create two sections with titles "Group1" and
+            % "Group2". "Group1" contains PropertyDefault and
+            % PropertyCustomPrompt. "Group2" contains PropertyEnum,
+            % PropertyLogical, and a Visualize button.
+            generalParams = {'SolverSpace', 'Method', 'Waypoints', 'Timepoints', 'Velocities', 'Accelerations'};
+            generalParametersGroup = matlab.system.display.Section(...
+                'Title', 'General Parameters',...
+                'PropertyList', generalParams);
+            
+            orientationParametersGroup = matlab.system.display.Section(...
+                'Title', 'Include Orientations',...
+                'PropertyList', {'PropertyLogical', 'Orientations'});
+            
+            groups = [generalParametersGroup, orientationParametersGroup];
+        end
+        
     end
 end

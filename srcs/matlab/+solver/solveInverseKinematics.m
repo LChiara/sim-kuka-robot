@@ -10,12 +10,11 @@ if nargin < 4
     tolerance = 1e-6;
 end
 
-lambda  = 0.1;       %damping parameter.
-W       = eye(6, 6); %W=weighting matrix, diagonal.
-Id      = eye(6, 6); %Identity matrix
+W       = eye(6); %W=weighting matrix, diagonal.
+Id      = eye(6); %Identity matrix
 
 q = zeros(1, 6);    %initialize solution q
-
+lambda   = 0.1;     %initialize damping parameter.
 rejected = 0;       %initialize number of solutions
 status = cast(0, 'int8');
 
@@ -34,11 +33,12 @@ for i=1:maxIterations
     
     %Gauss-Newton with Levenberg-Marquadt
     %source: https://people.duke.edu/~hpgavin/ce281/lm.pdf
+    % and 
     %"""
     %The Levenberg-Marquardt algorithm adaptively varies the
     %parameter updates between the gradient descent update and
     %the Gauss-Newton update:
-    % [Jt*W*J + λ*I]*h = Jt*W(y-y^)
+    % [Jt*W*J + λ*I]*h = Jt*W*(y-y^)
     % where h=parameter update.
     %- if λ small: Gauss-Newton update
     %- if λ large: gradient descent update
@@ -66,20 +66,13 @@ for i=1:maxIterations
 end
 end
 
-function TT = checkT(T)
-
+function T = checkT(T)
 dim = size(T);
 if (dim(1) == 3 && dim(2) == 1) || ...
         (dim(1) == 1 && dim(2) == 3)
     % define homogeneous transform T from pose
-    TT = [1, 0, 0, T(1, 1);
-        0, -1, 0, T(2, 1);
-        0, 0, -1, T(3, 1);
-        0, 0, 0, 1];
-else 
-    TT = T;
+    T = [eye(3), T; zeros(3, 1), 1];
 end
-
 end
 
 function J = computeJacobian(dhParams, q)
@@ -98,11 +91,14 @@ end
 
 function diffMotionMatrix = computeError(dhParams, q, T)
 y = solver.solveForwardKinematics(dhParams, q);
+% get transformation matrix from y to T
 C = y\T;
 translMatrix = C(1:3, 4);
 rotMatrix = C(1:3, 1:3);
 R = rotMatrix - eye(3, 3);
-v = 0.5*[R(3,2)-R(2,3); R(1,3)-R(3,1); R(2,1)-R(1,2)];
+% convert from skew matrix [0 -v3 v2; v3 0 -v1; -v2 v1 0]
+% to vector [v1; v2; v3].
+v = [R(3,2); R(1,3); R(2,1)];
 diffMotionMatrix = [translMatrix; v];
 end
 
