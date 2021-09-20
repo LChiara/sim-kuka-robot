@@ -38,7 +38,7 @@ fprintf('%s D-H parameters...\n', loadStr);
 dhParametersStruct = defineDHParameters();
 
 fprintf('%s Dynamic parameters...\n', loadStr);
-loadDynamicParameters; % load dynamic parameters
+dynamicParametersStruct = loadDynamicParameters();
 
 fprintf('Creating SixAxesRobot...\n')
 sixAxesRobot = SixAxesRobot(dhParametersStruct);

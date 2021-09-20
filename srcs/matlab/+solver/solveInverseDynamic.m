@@ -3,7 +3,7 @@ function [tau, status] = solveInverseDynamic(dhParameters, M, Inertia, Fext, q, 
 % the desired joint accelerations at the current joint position
 % and velocities.
 
-G = [0; 0; -9.8];   % gravity vector
+G  = [0; -9.8; 0];  % gravity vector
 R_ = ones(3, 3, 6); % initialize R
 w  = zeros(3, 6);   % initialize angular velocity
 wd = zeros(3, 6);   % initialize angular acceleration
@@ -11,17 +11,17 @@ vd = zeros(3, 6);   % initialize linear acceleration
 vd(:, 1) = G;       % initialize linear acceleration with gravity
 
 z0 = [0; 0; 1];
-r  = [-0.25; 0; 0]; % distance to the center of mass
+r  = [0; 0; 0];     % distance to the center of mass
 
-nn = Fext(1:3);    % initialize nn (backward iteration)
-f  = Fext(4:6);    % initialize f  (backward iteration)
+nn = Fext(1:3);     % initialize nn (backward iteration)
+f  = Fext(4:6);     % initialize f  (backward iteration)
 
 tau = zeros(1, 6);  % initialize output
 
 for i=1:6
     dh = dhParameters(i, :);
-    pStar = [dh.a; dh.d*cos(dh.alpha); dh.d*sin(dh.alpha)]; % move from i-1 to i
-    Ti = solver.computeT(dh, q(i));
+    pStar = [dh.a; dh.d*sin(dh.alpha); dh.d*cos(dh.alpha)]; % move from i-1 to i
+    Ti = solver.computeT(dh, q(i)+dh.offset);
     R = Ti(1:3, 1:3)';
     R_(:, :, i) = R; % save R in order to reuse it in the next step
     
@@ -59,14 +59,14 @@ for j=6:-1:1
     else
         R = R_(:, :, j+1)';
     end
-    dh = dhParameters(i, :);
-    pStar = [dh.a; dh.d*cos(dh.alpha); dh.d*sin(dh.alpha)]; % move from i-1 to i
+    dh = dhParameters(j, :);
+    pStar = [dh.a; dh.d*sin(dh.alpha); dh.d*cos(dh.alpha)]; % move from i-1 to i
     % update nn for the next iteration
     nn = R*(nn + cross(R'*pStar, f)) + ...
         cross(pStar + r, linkFtot) + linkTauTot;
     % update f for the next iteration
     f = R*f + linkFtot;
-    tau(j) = nn'*(R'*z0);
+    tau(j) = nn'*(R_(:, :, j)*z0);
 end
 status = cast(1, 'int8');
 end

@@ -1,5 +1,4 @@
-%loadDynamicParameters
-
+function dynamicParametersStruct = loadDynamicParameters()
 %http://sksaha.com/sites/default/files/upload_data/documents/NaCoMM2011_2.pdf
 dynamicParametersStruct.I = ones(3, 3, 6);
 dynamicParametersStruct.M = ones(6, 1);
@@ -34,3 +33,4 @@ dynamicParametersStruct.M = [26.9797;
 
 % generate external forces
 dynamicParametersStruct.Fext = zeros(6, 1);
+end
