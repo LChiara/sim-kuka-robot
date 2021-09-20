@@ -1,14 +1,15 @@
-function [q, status] = solveInverseKinematics(dhParameters, T, maxIterations, tolerance)
+function [q, status, yErr, i] = solveInverseKinematics(dhParameters, T, maxIterations, tolerance)
 if isstruct(dhParameters)
     dhParameters = struct2table(dhParameters);
 end
 T = checkT(T);
 if nargin < 3
-    maxIterations = 50;
+    maxIterations = 500;
 end
 if nargin < 4
     tolerance = 1e-6;
 end
+
 
 W       = eye(6); %W=weighting matrix, diagonal.
 Id      = eye(6); %Identity matrix
@@ -16,11 +17,13 @@ Id      = eye(6); %Identity matrix
 q = zeros(1, 6);    %initialize solution q
 lambda   = 0.1;     %initialize damping parameter.
 rejected = 0;       %initialize number of solutions
-status = cast(0, 'int8');
+maxRejected = 100;
+status = cast(-1, 'int8');
+
+% compute initial error
+yErr = computeError(dhParameters, q, T);
 
 for i=1:maxIterations
-    % compute error
-    yErr = computeError(dhParameters, q, T);
     
     isSolution = isSolutionFound(W, yErr, tolerance);
     if isSolution
@@ -56,13 +59,21 @@ for i=1:maxIterations
         % accelerates to the local minimum.
         q = qUpdate;
         lambda = lambda/2;
+        yErr = yErrNew;
+        rejected = 0;
     else
+        % do not update yErr and q
         rejected = rejected + 1;
         lambda = lambda*2;
-        if rejected >= maxIterations
-            status = cast(2, 'int8');
+        if rejected > maxRejected
+            status = cast(0, 'int8');
+            %q = [];
+            break;
         end
     end
+end
+if status == -1
+    status = cast(2, 'int8'); % solution not found -> return last iteration
 end
 end
 
@@ -82,7 +93,7 @@ for indx=6:-1:1
     T = solver.computeT(dhParams(indx, :), q(indx));
     U = T*U;
     d = [-U(1,1)*U(2,4) + U(2,1)*U(1,4)
-        U(1,2)*U(2,4) + U(2,2)*U(1,4)
+        -U(1,2)*U(2,4) + U(2,2)*U(1,4)
         -U(1,3)*U(2,4) + U(2,3)*U(1,4)];
     delta = U(3,1:3)';  % nz oz az
     J(:,indx) = [d; delta];
@@ -98,7 +109,7 @@ rotMatrix = C(1:3, 1:3);
 R = rotMatrix - eye(3, 3);
 % convert from skew matrix [0 -v3 v2; v3 0 -v1; -v2 v1 0]
 % to vector [v1; v2; v3].
-v = [R(3,2); R(1,3); R(2,1)];
+v = 0.5*[R(3,2)-R(2,3); R(1,3)-R(3,1); R(2,1)-R(1,2)];
 diffMotionMatrix = [translMatrix; v];
 end
 

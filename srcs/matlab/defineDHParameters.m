@@ -7,7 +7,8 @@ end
 d       = [675;     0;      0;      -820;   0;      -170];
 a       = [350;     850;    0;      0;      0;      0];
 alpha   = [-pi/2;   0;      pi/2;   -pi/2;  pi/2;   pi];
-offset  = [0;       -pi/2;  0;      0;      0;      0];
+%offset  = [0;       pi/2;  0;      0;      0;      0];
+offset  = [0;       0;  0;      0;      0;      0];
 dhParameters = struct( ...
     'd', d, ...
     'a', a, ...
