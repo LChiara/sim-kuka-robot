@@ -10,7 +10,6 @@ if nargin < 4
     tolerance = 1e-6;
 end
 
-
 W       = eye(6); %W=weighting matrix, diagonal.
 Id      = eye(6); %Identity matrix
 

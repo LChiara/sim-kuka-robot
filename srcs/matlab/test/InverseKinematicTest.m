@@ -29,7 +29,7 @@ classdef InverseKinematicTest < matlab.unittest.TestCase
         
         function loadParameters(testCase)
             % load parameters: dh-parameters
-            testCase.DHParams = defineDHParameters(true);
+            testCase.DHParams = loadDHParams(true);
         end
         
     end

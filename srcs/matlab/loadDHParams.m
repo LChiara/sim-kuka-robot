@@ -1,4 +1,4 @@
-function dhParameters = defineDHParameters(toTable)
+function dhParameters = loadDHParams(toTable)	
 if nargin < 1
     toTable = false;
 end

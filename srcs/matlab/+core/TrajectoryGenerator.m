@@ -131,14 +131,14 @@ classdef TrajectoryGenerator < matlab.System & matlab.system.mixin.Propagates
             
             if integrateOrientation
                 orientations = obj.Orientations;
-                R0 = convertEulerToQuaternion(orientations(:, index)');
-                Rf = convertEulerToQuaternion(orientations(:, index+1)');
+                R0 = trajectory.convertEulerToQuaternion(orientations(:, index)');
+                Rf = trajectory.convertEulerToQuaternion(orientations(:, index+1)');
                 timeInterval = [timepoints(index), timepoints(index+1)];
                 R = rottraj(R0, ... % initial orientation
                     Rf, ...         % final orientation
                     timeInterval, ... % time interval
                     t);             % current time
-                pos_out = [convertEulerToRotationMatrix(R), pos_out;
+                pos_out = [trajectory.convertEulerToRotationMatrix(R), pos_out;
                     zeros(1, 3), 1];
             elseif strcmp(obj.SolverSpace, 'TaskSpace')
                 % transform in homogeneous T
@@ -154,6 +154,19 @@ classdef TrajectoryGenerator < matlab.System & matlab.system.mixin.Propagates
         function resetImpl(~)
             
         end
+        
+        function s = saveObjectImpl(obj)
+            s = saveObjectImpl@matlab.System(obj);
+            s.NCoeff = obj.NCoeff;
+        end
+        
+%         function loadObjectImpl(obj, s)
+%             % Call the base class method
+%             obj.NCoeff = s.NCoeff;
+%             
+%             % Call base class method to load public properties
+%             loadObjectImpl@matlab.System(obj, s);
+%         end
         
         function flag = isInactivePropertyImpl(obj,prop)
             %isInactivePropertyImpl Identify inactive properties

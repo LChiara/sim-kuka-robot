@@ -34,7 +34,7 @@ classdef InverseDynamicTest < matlab.unittest.TestCase
         
         function loadParameters(testCase, dynamicPropertiesGenerator)
             % load parameters: dh-parameters and dynamic attributes
-            testCase.DHParams = defineDHParameters(true);
+            testCase.DHParams = loadDHParams(true);
             testCase.DynParams = dynamicPropertiesGenerator();
         end
         

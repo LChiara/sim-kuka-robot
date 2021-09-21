@@ -10,17 +10,21 @@ For the inverse dynamic the recursive Newton-Euler method has been implemented.
 ```
 .
 ├── ...
-├── srcs                    
+├── srcs
+│   ├── data
+│   │   ├── waypointSet_00.m            # Set of waypoints 00
+│   │   └── waypointSet_*.m             # Set of waypoints **                   
 │   ├── matlab                          
-|   │   ├── +core                       # Package for all the Matlab object
-|   │   ├── +solver                     # Package for the ik, id and fd solver
-|   │   └── +trajectory                 # Package for the quintic and cubic polynomial
+│   │   ├── +core                       # Package for all the Matlab System Objects
+│   │   ├── +solver                     # Package for the ik, id and fd solver
+│   │   ├── +trajectory                 # Package for the quintic and cubic polynomial
+│   │   └── busObjects.mat              # List of busses to load into workspace for simulation
 │   ├── simulink
-|   │   ├── KukaSimModel.slx            # Kuka Simulation model
-|   │   ├── KukaVisualizationModel.slx  # Model for the 3D simulation
-|   │   └── lib_Solver.slx              # library containing blocks for ik, id and fk solvers
-│   └── wrl                             # wrl model
-└── startup.m                           # script used for the setup
+│   │   ├── KukaSimModel.slx            # Kuka Simulation model
+│   │   ├── KukaVisualizationModel.slx  # Model for the 3D simulation
+│   │   └── lib_Solver.slx              # library containing blocks for ik, id and fk solvers
+│   └── wrl                              # wrl model
+└── startup.m                            # script to setup the environment
 ```
 
 ## Kuka6.wrl

@@ -1,4 +1,4 @@
-function dynamicParametersStruct = loadDynamicParameters()
+function dynamicParametersStruct = loadDynamicParams()
 %http://sksaha.com/sites/default/files/upload_data/documents/NaCoMM2011_2.pdf
 dynamicParametersStruct.I = ones(3, 3, 6);
 dynamicParametersStruct.M = ones(6, 1);

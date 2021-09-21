@@ -7,23 +7,14 @@ else
     TRAJECTORY = 1;
     TP_MODE = 2;
 end
-
-switch TRAJECTORY
-    case 0
-        waypointLoaderScript = 'loadWaypointSimple';
-    case 1
-        waypointLoaderScript = 'loadWaypointQuadrilater';
-    case 2
-        waypointLoaderScript = 'loadWaypointQuadrilater2';
-    case 3
-        waypointLoaderScript = 'loadWaypointQuadrilater3';
-end
+genWaypointsScript = str2func(sprintf('gen_waypointSet_%02d', TRAJECTORY));
 
 if ~exist('IsSixAxesRobotInitialized', 'var')
     fprintf('Startup KukaKR6...\n');
     fprintf('Add Matlab paths...\n');
     addpath(fullfile('.'));
     addpath(fullfile('srcs'));
+    addpath(fullfile('srcs\data'));
     addpath(fullfile('srcs\matlab'));
     addpath(fullfile('srcs\simulink'));
     addpath(fullfile('srcs\simulink\blockicons'));
@@ -34,41 +25,41 @@ else
     loadStr = 'Reload';
 end
 
-fprintf('%s D-H parameters...\n', loadStr);
-dhParametersStruct = defineDHParameters();
+fprintf('-> %s D-H parameters...\n', loadStr);
+dhParametersStruct = loadDHParams();
+disp(struct2table(dhParametersStruct));
 
-fprintf('%s Dynamic parameters...\n', loadStr);
-dynamicParametersStruct = loadDynamicParameters();
+fprintf('-> %s Dynamic parameters...\n', loadStr);
+dynamicParametersStruct = loadDynamicParams();
+disp('Mass: ');
+disp(dynamicParametersStruct.M);
 
-fprintf('Creating SixAxesRobot...\n')
-sixAxesRobot = SixAxesRobot(dhParametersStruct);
-sixAxesRobot.Name = 'SixAxesRobot';
-sixAxesRobot.M = dynamicParametersStruct.M;
-sixAxesRobot.I = dynamicParametersStruct.I;
-disp(sixAxesRobot);
-
-fprintf('%s Waypoints from "%s"...\n', loadStr, waypointLoaderScript);
+fprintf('-> %s Waypoints...\n', loadStr);
+fprintf('Calculate home configuration\n');
 % get home configuration
-q_config = [0 0 0 0 0 0]; T_homeConfig = sixAxesRobot.solveFK(q_config); homeConfig = T_homeConfig(1:3, 4);
+qHomeConfig = [0 0 0 0 0 0];
+THomeConfig = solver.solveForwardKinematics(dhParams, qHomeConfig); 
+eeHomeConfig = THomeConfig(1:3, 4);
 % load waypoints, waypoints velocities and waypoints accelerations
-run(waypointLoaderScript);
+waypointsStruct = loadWaypoints(TRAJECTORY, eeHomeConfig);
 
-fprintf('%s Bus Objects...\n', loadStr);
+fprintf('-> %s Bus Objects...\n', loadStr);
 load('busObjects.mat');
-
-fprintf('Opening model "KukaSimModel.slx"...\n');
-open_system('KukaSimModel.slx');
-fprintf('Setting "StopTime"=%ds...\n', max(waypointsStruct.times));
-set_param('KukaSimModel', 'StopTime', num2str(max(waypointsStruct.times)));
-%dt_FixedStep = str2double(get_param('KukaSimModel', 'FixedStep'));
-dt_FixedStep = 0.01;
 
 if TP_MODE == 1
     modus = 'TaskSpace';
 else
     modus = 'JointSpace';
 end
-fprintf('Setting Variant TP_MODE=%d->["%s"]\n', TP_MODE, modus);
+fprintf('-> Setting Variant Subsystem\n');
+fprintf('TP_MODE=%d->["%s"]\n', TP_MODE, modus);
+
+fprintf('-> Opening model "KukaSimModel.slx"...\n');
+open_system('KukaSimModel.slx');
+fprintf('Setting "StopTime"=%ds...\n', max(waypointsStruct.times));
+set_param('KukaSimModel', 'StopTime', num2str(max(waypointsStruct.times)));
+%dt_FixedStep = str2double(get_param('KukaSimModel', 'FixedStep'));
+dt_FixedStep = 0.01;
 
 IsSixAxesRobotInitialized = true;
 
