@@ -9,9 +9,12 @@ else
 end
 genWaypointsScript = str2func(sprintf('gen_waypointSet_%02d', TRAJECTORY));
 
+fprintf('============================\n');
+fprintf('|    Startup KukaKR6...    |\n');
+fprintf('============================\n');
+
 if ~exist('IsSixAxesRobotInitialized', 'var')
-    fprintf('Startup KukaKR6...\n');
-    fprintf('Add Matlab paths...\n');
+    fprintf('-> Adding Matlab paths...\n');
     addpath(fullfile('.'));
     addpath(fullfile('srcs'));
     addpath(fullfile('srcs\data'));
@@ -20,14 +23,16 @@ if ~exist('IsSixAxesRobotInitialized', 'var')
     addpath(fullfile('srcs\simulink\blockicons'));
     addpath(fullfile('srcs\wrl'));
     
-    loadStr = 'Load';
+    loadStr = 'Loading';
 else
-    loadStr = 'Reload';
+    loadStr = 'Reloading';
 end
 
 fprintf('-> %s D-H parameters...\n', loadStr);
 dhParametersStruct = loadDHParams();
-disp(struct2table(dhParametersStruct));
+dhParams = struct2table(dhParametersStruct);
+disp(dhParams);
+
 
 fprintf('-> %s Dynamic parameters...\n', loadStr);
 dynamicParametersStruct = loadDynamicParams();
@@ -35,10 +40,10 @@ disp('Mass: ');
 disp(dynamicParametersStruct.M);
 
 fprintf('-> %s Waypoints...\n', loadStr);
-fprintf('Calculate home configuration\n');
+fprintf('Computing home configuration...\n');
 % get home configuration
 qHomeConfig = [0 0 0 0 0 0];
-THomeConfig = solver.solveForwardKinematics(dhParams, qHomeConfig); 
+THomeConfig = solver.solveForwardKinematics(dhParams, qHomeConfig);
 eeHomeConfig = THomeConfig(1:3, 4);
 % load waypoints, waypoints velocities and waypoints accelerations
 waypointsStruct = loadWaypoints(TRAJECTORY, eeHomeConfig);
@@ -51,7 +56,7 @@ if TP_MODE == 1
 else
     modus = 'JointSpace';
 end
-fprintf('-> Setting Variant Subsystem\n');
+fprintf('-> Setting Variant Subsystem...\n');
 fprintf('TP_MODE=%d->["%s"]\n', TP_MODE, modus);
 
 fprintf('-> Opening model "KukaSimModel.slx"...\n');
