@@ -31,12 +31,19 @@ genWaypointsScript = str2func(sprintf('gen_waypointSet_%02d', config__TRAJECTORY
 fprintf('-> %s D-H parameters...\n', loadStr);
 dhParametersStruct = loadDHParams();
 dhParams = struct2table(dhParametersStruct);
-disp(dhParams);
+%disp(dhParams);
 
 fprintf('-> %s Dynamic parameters...\n', loadStr);
 dynamicParametersStruct = loadDynamicParams();
 disp('Mass: ');
 disp(dynamicParametersStruct.M);
+
+fprintf('-> %s Bus Objects...\n', loadStr);
+load('busObjects.mat');
+
+fprintf('-> Setting Variant Subsystem...\n');
+TP_MODE = config__SPACE.double;
+fprintf('TP_MODE=%d->["%s"]\n', TP_MODE, config__SPACE.char);
 
 fprintf('-> %s Waypoints...\n', loadStr);
 fprintf('Computing home configuration...\n');
@@ -46,13 +53,6 @@ THomeConfig = solver.solveForwardKinematics(dhParams, qHomeConfig);
 eeHomeConfig = THomeConfig(1:3, 4);
 % load waypoints, waypoints velocities and waypoints accelerations
 waypointsStruct = loadWaypoints(config__TRAJECTORY, eeHomeConfig);
-
-fprintf('-> %s Bus Objects...\n', loadStr);
-load('busObjects.mat');
-
-fprintf('-> Setting Variant Subsystem...\n');
-TP_MODE = config__SPACE.double;
-fprintf('TP_MODE=%d->["%s"]\n', TP_MODE, config__SPACE.char);
 
 fprintf('-> Loading model "KukaSimModel.slx"...\n');
 modelFileName = 'KukaSimModel';
