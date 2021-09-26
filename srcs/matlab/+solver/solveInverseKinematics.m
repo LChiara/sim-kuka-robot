@@ -1,4 +1,7 @@
 function [q, status, yErr, i] = solveInverseKinematics(dhParameters, T, maxIterations, tolerance)
+% Solve inverse kinematics using the Newton-Euler Method
+% tau = M(q)qddot + C(q,qdot)qdot + g(q)
+
 if isstruct(dhParameters)
     dhParameters = struct2table(dhParameters);
 end

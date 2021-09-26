@@ -1,4 +1,4 @@
-classdef TrajectoryGenerator < matlab.System & matlab.system.mixin.Propagates
+classdef TrajectoryGenerator < matlab.System
     % System object to generate a trajectory for a waypoints set.
     %
     % A cubic polynomial or quintic polynomial, basing on the user input,
@@ -17,7 +17,7 @@ classdef TrajectoryGenerator < matlab.System & matlab.system.mixin.Propagates
         Velocities = zeros(3, 5);
         %Acceleration
         Accelerations = zeros(3, 5);
-        %PropertyLogical Include end-effector orientations (only for TaskSpace)
+        %PropertyLogical Integrate orientations using SLERP (Experimental)
         PropertyLogical (1, 1) logical = false;
         %Orientations
         Orientations = zeros(3, 5);
@@ -140,9 +140,12 @@ classdef TrajectoryGenerator < matlab.System & matlab.system.mixin.Propagates
                     t);             % current time
                 pos_out = [trajectory.convertEulerToRotationMatrix(R), pos_out;
                     zeros(1, 3), 1];
-            elseif strcmp(obj.SolverSpace, 'TaskSpace')
+            elseif strcmp(obj.SolverSpace, 'TaskSpace') && ...
+                    ~isempty(obj.Orientations)
                 % transform in homogeneous T
-                pos_out = [eye(3), pos_out;
+                orientations = obj.Orientations;
+                Rorientation = trajectory.convertEulerToRotationMatrix(orientations(:, index));
+                pos_out = [Rorientation, pos_out;
                     zeros(1, 3), 1];
             end
             
@@ -178,10 +181,7 @@ classdef TrajectoryGenerator < matlab.System & matlab.system.mixin.Propagates
                 methodProps = [methodProps, {'Accelerations'}];
             end
             if strcmp(obj.SolverSpace, 'TaskSpace')
-                methodProps = [methodProps, {'PropertyLogical'}];
-            end
-            if obj.PropertyLogical
-                methodProps = [methodProps, {'Orientations'}];
+                methodProps = [methodProps, {'PropertyLogical', 'Orientations'}];
             end
             
             props = methodProps;
@@ -209,7 +209,7 @@ classdef TrajectoryGenerator < matlab.System & matlab.system.mixin.Propagates
         function [out,out2,out3] = getOutputSizeImpl(obj)
             %getOutputSizeImpl Return size for each output port
             n = size(obj.Waypoints, 1);
-            if strcmp(obj.SolverSpace, 'TaskSpace')
+            if strcmp(obj.SolverSpace, 'TaskSpace') && ~isempty(obj.Orientations)
                 out = [4 4]; % output homogeneout T for target pose in the operational space
             else
                 out = [n 1];
@@ -248,14 +248,14 @@ classdef TrajectoryGenerator < matlab.System & matlab.system.mixin.Propagates
             % "Group2". "Group1" contains PropertyDefault and
             % PropertyCustomPrompt. "Group2" contains PropertyEnum,
             % PropertyLogical, and a Visualize button.
-            generalParams = {'SolverSpace', 'Method', 'Waypoints', 'Timepoints', 'Velocities', 'Accelerations'};
+            generalParams = {'SolverSpace', 'Method', 'Waypoints', 'Timepoints', 'Velocities', 'Accelerations', 'Orientations'};
             generalParametersGroup = matlab.system.display.Section(...
                 'Title', 'General Parameters',...
                 'PropertyList', generalParams);
             
             orientationParametersGroup = matlab.system.display.Section(...
-                'Title', 'Include Orientations',...
-                'PropertyList', {'PropertyLogical', 'Orientations'});
+                'Title', 'Experimental',...
+                'PropertyList', {'PropertyLogical'});
             
             groups = [generalParametersGroup, orientationParametersGroup];
         end

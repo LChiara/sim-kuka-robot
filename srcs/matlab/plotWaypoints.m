@@ -1,4 +1,4 @@
-function plotWaypoints_(waypointsRaw, trajectoryRaw, trajectoryColor, f)
+function plotWaypoints(waypointsRaw, trajectoryRaw, trajectoryColor, f)
 if nargin < 2
     trajectoryRaw = [];
     trajectoryColor = [];
@@ -21,10 +21,10 @@ waypoints = R*waypointsRaw;
 
 % axes configuration (limit and view)
 xlabel('X'); ylabel('Y'); zlabel('Z');
-getAxisLim = @(x) [min(x)-abs(floor(min(x)/10)), max(x)+abs(floor(max(x)/10))];
-xlim(getAxisLim(waypoints(1, :)));
-ylim(getAxisLim(waypoints(2, :)));
-zlim(getAxisLim(waypoints(3, :)));
+getAxisLim = @(x, p) [min(x)-abs(floor(min(x)*p/100)), max(x)+abs(floor(max(x)*p/100))];
+xlim(getAxisLim(waypoints(1, :), 25));
+ylim(getAxisLim(waypoints(2, :), 25));
+zlim(getAxisLim(waypoints(3, :), 25));
 view(105, 26)
 
 % plot waypoints and label

@@ -1,14 +1,5 @@
 % startup.m
 
-if exist('config', 'var')
-    TRAJECTORY = config.trajectory;
-    TP_MODE = config.space;
-else
-    TRAJECTORY = 1;
-    TP_MODE = 2;
-end
-genWaypointsScript = str2func(sprintf('gen_waypointSet_%02d', TRAJECTORY));
-
 fprintf('============================\n');
 fprintf('|    Startup KukaKR6...    |\n');
 fprintf('============================\n');
@@ -28,11 +19,19 @@ else
     loadStr = 'Reloading';
 end
 
+if exist('config', 'var')
+    config__TRAJECTORY = config.trajectory;
+    config__SPACE = config.space;
+else
+    config__TRAJECTORY = 5;
+    config__SPACE = enum.SpaceEnum.JointSpace;
+end
+genWaypointsScript = str2func(sprintf('gen_waypointSet_%02d', config__TRAJECTORY));
+
 fprintf('-> %s D-H parameters...\n', loadStr);
 dhParametersStruct = loadDHParams();
 dhParams = struct2table(dhParametersStruct);
 disp(dhParams);
-
 
 fprintf('-> %s Dynamic parameters...\n', loadStr);
 dynamicParametersStruct = loadDynamicParams();
@@ -46,25 +45,20 @@ qHomeConfig = [0 0 0 0 0 0];
 THomeConfig = solver.solveForwardKinematics(dhParams, qHomeConfig);
 eeHomeConfig = THomeConfig(1:3, 4);
 % load waypoints, waypoints velocities and waypoints accelerations
-waypointsStruct = loadWaypoints(TRAJECTORY, eeHomeConfig);
+waypointsStruct = loadWaypoints(config__TRAJECTORY, eeHomeConfig);
 
 fprintf('-> %s Bus Objects...\n', loadStr);
 load('busObjects.mat');
 
-if TP_MODE == 1
-    modus = 'TaskSpace';
-else
-    modus = 'JointSpace';
-end
 fprintf('-> Setting Variant Subsystem...\n');
-fprintf('TP_MODE=%d->["%s"]\n', TP_MODE, modus);
+TP_MODE = config__SPACE.double;
+fprintf('TP_MODE=%d->["%s"]\n', TP_MODE, config__SPACE.char);
 
-fprintf('-> Opening model "KukaSimModel.slx"...\n');
-open_system('KukaSimModel.slx');
-fprintf('Setting "StopTime"=%ds...\n', max(waypointsStruct.times));
-set_param('KukaSimModel', 'StopTime', num2str(max(waypointsStruct.times)));
+fprintf('-> Loading model "KukaSimModel.slx"...\n');
+modelFileName = 'KukaSimModel';
+load_system(modelFileName);
 %dt_FixedStep = str2double(get_param('KukaSimModel', 'FixedStep'));
-dt_FixedStep = 0.01;
+dt_FixedStep = 0.1;
 
 IsSixAxesRobotInitialized = true;
 

@@ -20,6 +20,8 @@ tau = zeros(1, 6);  % initialize output
 
 for i=1:6
     dh = dhParameters(i, :);
+    dh.a = dh.a/1000;
+    dh.d = dh.d/1000;
     pStar = [dh.a; dh.d*sin(dh.alpha); dh.d*cos(dh.alpha)]; % move from i-1 to i
     Ti = solver.computeT(dh, q(i)+dh.offset);
     R = Ti(1:3, 1:3)';
@@ -60,6 +62,8 @@ for j=6:-1:1
         R = R_(:, :, j+1)';
     end
     dh = dhParameters(j, :);
+    dh.a = dh.a/1000;
+    dh.d = dh.d/1000;
     pStar = [dh.a; dh.d*sin(dh.alpha); dh.d*cos(dh.alpha)]; % move from i-1 to i
     % update nn for the next iteration
     nn = R*(nn + cross(R'*pStar, f)) + ...
