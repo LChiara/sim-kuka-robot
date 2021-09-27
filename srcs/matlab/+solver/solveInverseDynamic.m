@@ -3,7 +3,7 @@ function [tau, status] = solveInverseDynamic(dhParameters, M, Inertia, Fext, q, 
 % the desired joint accelerations at the current joint position
 % and velocities.
 
-G  = [0; -9.8; 0];  % gravity vector
+G  = [-9.8; 0; 0];  % gravity vector
 R_ = ones(3, 3, 6); % initialize R
 w  = zeros(3, 6);   % initialize angular velocity
 wd = zeros(3, 6);   % initialize angular acceleration

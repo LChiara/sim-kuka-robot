@@ -1,7 +1,8 @@
 function [fastRestart, waypointsStruct] = enableFastRestartIfPossible(modelName, lastRun, config)
 % reload waypoints
 waypointsStruct     = loadWaypoints(config.trajectory, config.homeConfig);
-    
+assignin("base", 'waypointsStruct', waypointsStruct);
+
     % define function handle to set the "FastRestart" parameter
     function setStopTime(m, t)
         printlog('Setting "StopTime"=%ds...', max(t));
@@ -42,7 +43,7 @@ isPolynomialEqual   = isequal(lastRun.polynomial, config.polynomial);
 isSpaceEqual        = isequal(lastRun.space, config.space);
 isTrajectoryEqual   = isequal(lastRun.trajectory, config.trajectory);
 isWaypointSetEqual  = isequal(waypointsStruct, lastRun.waypoints);
-fastRestart         = isTrajectoryEqual && isSpaceEqual && isWaypointSetEqual;
+fastRestart         = isTrajectoryEqual && isSpaceEqual && isWaypointSetEqual && isPolynomialEqual;
 
 % set "FastRestart=on" if all the conditions are verified (nothing changed
 % from the previous run).
