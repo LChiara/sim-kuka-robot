@@ -35,8 +35,7 @@ dhParams = struct2table(dhParametersStruct);
 
 fprintf('-> %s Dynamic parameters...\n', loadStr);
 dynamicParametersStruct = loadDynamicParams();
-disp('Mass: ');
-disp(dynamicParametersStruct.M);
+%disp('Mass: '); disp(dynamicParametersStruct.M);
 
 fprintf('-> %s Bus Objects...\n', loadStr);
 load('busObjects.mat');

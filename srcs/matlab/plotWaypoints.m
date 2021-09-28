@@ -16,11 +16,11 @@ end
 hold on; % ensure hold on
 
 % rotate for plot purposes
-R = [0 0 1; 0 1 0; -1 0 0];
+R = [0 0 -1; 0 1 0; 1 0 0];
 waypoints = R*waypointsRaw;
 
 % axes configuration (limit and view)
-xlabel('X'); ylabel('Y'); zlabel('Z');
+xlabel('Z'); ylabel('Y'); zlabel('X');
 getAxisLim = @(x, p) [min(x)-abs(floor(min(x)*p/100)), max(x)+abs(floor(max(x)*p/100))];
 xlim(getAxisLim(waypoints(1, :), 25));
 ylim(getAxisLim(waypoints(2, :), 25));
